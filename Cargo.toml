@@ -1,0 +1,22 @@
+[package]
+name = "nes"
+version = "1.0.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+argh = "0.1.9"
+sdl2 = { version = "0.35.2", features = ["unsafe_textures"] }
+enum_dispatch = "0.3.8"
+serde = { version = "1.0.147", features = ["derive"] }
+serde_json = "1.0.87"
+serde-big-array = "0.4.1"
+egui = "0.20.1"
+eframe = { version = "0.20.1", default-features = false, features = ["default_fonts", "glow"]}
+byte-slice-cast = "1.2.2"
+
+[features]
+
+[profile.dev]
+opt-level = 2
