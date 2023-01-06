@@ -2,7 +2,7 @@ use crate::cartridge::{Cartridge, MapperType};
 use crate::cpu::Cpu;
 use crate::gui::DebugInfo;
 use crate::util::Config;
-use crate::State;
+use crate::{State, OSCILLOSCOPE_DEPTH, OSCILLOSCOPE_SAMPLES};
 use egui::Ui;
 use std::error::Error;
 use std::time::Duration;
@@ -15,10 +15,13 @@ pub struct EmulatorCore {
     pub running: bool,
     pub state: State,
     _clockrate: u32,
-    adjust: i8,
     avg_fps: f64,
     fps: f64,
+    // For calculating the number of cycles to run this frame
+    adjust: i8,
     frame: usize,
+    // For oscilloscope
+    pub sample_buffers: [Vec<f32>; 6],
 }
 
 impl EmulatorCore {
@@ -37,9 +40,16 @@ impl EmulatorCore {
             _clockrate: clockrate,
             avg_fps: 60.0,
             fps: 60.0,
-            // For calculating the number of cycles to run this frame
             adjust: 0,
             frame: 0,
+            sample_buffers: [
+                vec![(OSCILLOSCOPE_DEPTH / 2) as f32; OSCILLOSCOPE_SAMPLES],
+                vec![(OSCILLOSCOPE_DEPTH / 2) as f32; OSCILLOSCOPE_SAMPLES],
+                vec![(OSCILLOSCOPE_DEPTH / 2) as f32; OSCILLOSCOPE_SAMPLES],
+                vec![(OSCILLOSCOPE_DEPTH / 2) as f32; OSCILLOSCOPE_SAMPLES],
+                vec![(OSCILLOSCOPE_DEPTH / 2) as f32; OSCILLOSCOPE_SAMPLES],
+                vec![(OSCILLOSCOPE_DEPTH / 2) as f32; OSCILLOSCOPE_SAMPLES],
+            ],
         })
     }
 

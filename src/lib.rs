@@ -33,6 +33,10 @@ mod screen;
 mod speaker;
 pub mod util;
 
+const SAMPLERATE: u32 = 44100;
+const OSCILLOSCOPE_SAMPLES: usize = (SAMPLERATE as usize / 60) * 2;
+const OSCILLOSCOPE_DEPTH: usize = 60;
+
 #[derive(Clone, Copy, PartialEq)]
 pub enum State {
     Halted,
@@ -155,7 +159,7 @@ impl Nes {
                 Event::KeyDown {
                     keycode: Some(Keycode::M),
                     ..
-                } => self.speaker.volume = (self.speaker.volume.ceil() as u8 ^ 1) as f32,
+                } => self.speaker.muted = !self.speaker.muted,
                 Event::ControllerButtonDown { button, .. } => {
                     let controller = core.cpu.bus.controller();
 
@@ -352,13 +356,11 @@ impl Nes {
                     loop {
                         old_state = new_state;
 
-                        let ppu_cyc = core.cpu.bus.ppu().position().1;
+                        let ppu_cyc = core.cpu.bus.ppu().dot;
 
                         new_state = self.execute(core, new_state)?;
 
-                        if core.cpu.bus.ppu().position().1 < ppu_cyc
-                            || new_state == State::RestartFrame
-                        {
+                        if core.cpu.bus.ppu().dot < ppu_cyc || new_state == State::RestartFrame {
                             break;
                         }
                     }
@@ -407,7 +409,19 @@ impl Nes {
 
     fn execute(&mut self, core: &mut EmulatorCore, state: State) -> Result<State, Box<dyn Error>> {
         while self.actual_cycle < core.cpu.cyc {
-            self.speaker.push_sample(core.cpu.bus.apu().output())?;
+            let output = core.cpu.bus.apu().output();
+
+            self.speaker.push_sample(output)?;
+
+            if let Some(output) = self.speaker.output.take() {
+                let diameter = OSCILLOSCOPE_DEPTH / 2;
+
+                for (channel, output) in output.iter().enumerate() {
+                    core.sample_buffers[channel]
+                        .push(diameter as f32 - output * diameter as f32 * 0.5);
+                }
+            }
+
             self.actual_cycle += 1;
         }
 

@@ -34,8 +34,10 @@ pub struct Nmi;
 pub struct Ppu {
     pub bank_settings: BankSettings,
     pub chr: Vec<u8>,
+    pub dot: u16,
     #[serde(with = "BigArray")]
     pub fb: [u32; 256 * 240],
+    pub frame: usize,
     pub interrupts: Vec<Nmi>,
     pub mirroring: Mirroring,
     pub mmc3: Option<Mmc3>,
@@ -43,6 +45,7 @@ pub struct Ppu {
     pub nmi_occurred: Cell<bool>,
     pub oam: Oam,
     pub ram: bool,
+    pub scanline: u16,
     a12: Cell<bool>,
     at_hi_latch: u8,
     at_latch: u8,
@@ -53,9 +56,6 @@ pub struct Ppu {
     ctrl: Control,
     cur_spr: Option<Sprite>,
     cyc: usize,
-    dot: u16,
-    // TODO
-    pub frame: usize,
     last_nmi_pair: bool,
     mapper_type: MapperType,
     mask: Mask,
@@ -68,7 +68,6 @@ pub struct Ppu {
     pt_hi_latch: u8,
     pt_lo_latch: u8,
     pt_shifters: [ShiftRegister<u16, 16>; 2],
-    scanline: u16,
     #[serde(skip)]
     selected_menu: Cell<Menu>,
     spr0_present: bool,
@@ -128,7 +127,9 @@ impl Ppu {
             } else {
                 chr_rom
             },
+            dot: 0,
             fb: [0; 256 * 240],
+            frame: 1,
             interrupts: Vec::new(),
             mirroring,
             mmc3: if mapper_type == MapperType::MMC3 {
@@ -140,6 +141,7 @@ impl Ppu {
             nmi_occurred: Cell::new(false),
             oam: Oam::new(),
             ram,
+            scanline: 261,
             a12: Cell::new(false),
             at_hi_latch: 0,
             at_latch: 0,
@@ -150,8 +152,6 @@ impl Ppu {
             ctrl: Control::new(),
             cur_spr: None,
             cyc: 0,
-            dot: 0,
-            frame: 1,
             last_nmi_pair: false,
             mapper_type,
             mask: Mask::new(),
@@ -164,7 +164,6 @@ impl Ppu {
             pt_hi_latch: 0,
             pt_lo_latch: 0,
             pt_shifters: [ShiftRegister::new(); 2],
-            scanline: 261,
             selected_menu: Cell::new(Menu::Registers),
             spr0_present: true,
             spr_active: [false; 8],
@@ -181,10 +180,6 @@ impl Ppu {
             w: Cell::new(false),
             x: 0,
         }
-    }
-
-    pub fn position(&self) -> (u16, u16) {
-        (self.scanline, self.dot)
     }
 
     pub fn read_reg(&self, reg: u8) -> u8 {

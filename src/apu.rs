@@ -9,7 +9,6 @@ use pulse::Pulse;
 use triangle::Triangle;
 
 use crate::util::bit::Bit;
-use debug::Menu;
 
 mod debug;
 mod dmc;
@@ -49,8 +48,6 @@ pub struct Apu {
     triangle: Triangle,
     request_cycles: usize,
     reset_requested: bool,
-    #[serde(skip)]
-    selected_menu: Cell<Menu>,
 }
 
 impl Apu {
@@ -68,23 +65,18 @@ impl Apu {
             pulse2: Pulse::new(Mode::TwosComplement, clockrate),
             request_cycles: 0,
             reset_requested: false,
-            selected_menu: Cell::new(Menu::Registers),
             triangle: Triangle::new(clockrate),
         }
     }
 
-    pub fn output(&self) -> f32 {
-        let pulse_out = 95.88 / ((8128.0 / (self.pulse1.output() + self.pulse2.output())) + 100.0);
-        let tnd_out = 159.79
-            / ((1.0
-                / ((self.triangle.output() / 8227.0)
-                    + (self.noise.output() / 12241.0)
-                    + (self.dmc.output() / 22638.0)))
-                + 100.0);
-
-        let out = pulse_out + tnd_out;
-
-        out * 2.0 - 1.0
+    pub fn output(&self) -> [f32; 5] {
+        [
+            self.pulse1.output(),
+            self.pulse2.output(),
+            self.triangle.output(),
+            self.noise.output(),
+            self.dmc.output(),
+        ]
     }
 
     pub fn read(&self, addr: u16) -> u8 {
