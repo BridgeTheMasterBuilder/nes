@@ -25,7 +25,7 @@ pub struct Status {
 impl Status {
     pub fn new() -> Self {
         Self {
-            flags: [false, false, false, false, false, true, false, false],
+            flags: [false, false, true, false, false, true, false, false],
         }
     }
 }

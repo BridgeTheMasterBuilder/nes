@@ -1,5 +1,6 @@
 use crate::bus::mapper::MapperTrait;
 use crate::cpu::{AddressingMode, Cpu};
+use crate::util::bit::Bit;
 
 use super::Register::*;
 
@@ -61,7 +62,14 @@ impl Cpu {
             _ => unimplemented!("Unimplemented instruction 0x{opcode:x?}"),
         };
 
-        print!("{:04X}: {} ", pc, OPCODE_MAP[opcode]);
+        let frame = self.bus.ppu().frame;
+        let scanline = self.bus.ppu().scanline;
+        let dot = self.bus.ppu().dot;
+
+        print!(
+            "[{}] ({},{}) {:04X}: {} ",
+            frame, scanline, dot, pc, OPCODE_MAP[opcode]
+        );
 
         pc += 1;
 
@@ -110,13 +118,22 @@ impl Cpu {
             }
         };
 
+        let p = u8::from(&self.p);
+
         println!(
-            "\t\tA: {:02X} X: {:02X} Y: {:02X} P: {:02X} SP: {:02X} Stack: {:X?}",
+            "\t\tA: {:02X} X: {:02X} Y: {:02X} P: [{}{}{}{}{}{}{}{}] SP: {:02X} Stack: {:X?}",
             // "\t\tA: {:02X} X: {:02X} Y: {:02X} P: {:02X}",
             self.regs[A as usize],
             self.regs[X as usize],
             self.regs[Y as usize],
-            u8::from(&self.p),
+            if p.bit(0) { "C" } else { "_" },
+            if p.bit(1) { "Z" } else { "_" },
+            if p.bit(2) { "I" } else { "_" },
+            "_",
+            "_",
+            "_",
+            if p.bit(6) { "V" } else { "_" },
+            if p.bit(7) { "N" } else { "_" },
             self.sp,
             &self.bus.memory()[0x100 + 1 + (self.sp as usize)..0x200]
         );

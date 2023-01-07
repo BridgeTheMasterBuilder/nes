@@ -9,7 +9,7 @@ pub struct Irq {
     pub occurred: bool,
     pub reload: u8,
     old_counter: u8,
-    old_cycle: usize,
+    filter: usize,
 }
 
 impl Irq {
@@ -20,24 +20,31 @@ impl Irq {
             occurred: false,
             reload: 0,
             old_counter: 0,
-            old_cycle: 0,
+            filter: 0,
         }
     }
 
-    pub fn clock(&mut self, a12_changed: bool, cycle: usize) {
-        if a12_changed && (cycle as isize - self.old_cycle as isize).abs() > 8 {
-            self.old_cycle = cycle;
+    pub fn clock(&mut self) {
+        // println!("counter before: {}", self.counter);
 
-            if self.counter == 0 {
-                self.counter = self.reload;
+        self.old_counter = self.counter;
 
-                if self.old_counter == 1 && self.enabled {
-                    self.occurred = true;
-                }
-            } else {
-                self.old_counter = self.counter;
-                self.counter -= 1;
-            }
+        if self.counter == 0 {
+            self.counter = self.reload;
+        } else {
+            // println!("decrementing counter");
+            self.counter -= 1;
+        }
+        //
+        // println!("counter after: {}", self.counter);
+        //
+        // println!("IRQ enabled = {}", self.enabled);
+
+        if self.old_counter == 1 && self.enabled {
+            // if self.enabled {
+            // if self.enabled {
+            // println!("Triggering IRQ");
+            self.occurred = true;
         }
     }
 }
