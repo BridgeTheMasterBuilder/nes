@@ -180,6 +180,10 @@ impl eframe::App for Gui<'_> {
                         }
                         ApuMenu::Visualizer => {
                             ui.vertical(|ui| {
+                                // let samples = if ui.available_width() < 1920.0 {
+                                //     OSCILLOSCOPE_SAMPLES
+                                // } else { OSCILLOSCOPE_SAMPLES*2 };
+
                                 let Vec2 { y: h, .. } = ui.available_size();
                                 let ymargin = h / 15.0;
                                 let rect = Rect::new(
