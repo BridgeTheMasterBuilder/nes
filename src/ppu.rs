@@ -246,12 +246,6 @@ impl Ppu {
         let show_spr = self.mask.show_sprites;
         let rendering = show_bg || show_spr;
 
-        if let Some(mmc3) = self.mmc3.as_mut() {
-            let a12_rising = !self.old_a12.get() && self.a12.get();
-
-            mmc3.irq.clock(a12_rising, self.cyc);
-        }
-
         // Idle
         if self.dot == 0 {
             if self.scanline == 0 {
@@ -284,10 +278,20 @@ impl Ppu {
         if let (cycles, true) = &mut self.ppuscroll_delay {
             if *cycles == 0 {
                 self.v = self.t.clone();
+
+                self.old_a12.replace(self.a12.get());
+                self.a12.replace(self.v.address().bit(12));
+
                 self.ppuscroll_delay = (0, false);
             } else {
                 *cycles -= 1;
             }
+        }
+
+        if let Some(mmc3) = self.mmc3.as_mut() {
+            let a12_rising = !self.old_a12.get() && self.a12.get();
+
+            mmc3.irq.clock(a12_rising, self.cyc);
         }
     }
 

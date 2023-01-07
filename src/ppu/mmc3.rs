@@ -25,7 +25,7 @@ impl Irq {
     }
 
     pub fn clock(&mut self, a12_changed: bool, cycle: usize) {
-        if a12_changed && (cycle as isize - self.old_cycle as isize).abs() > 10 {
+        if a12_changed && (cycle as isize - self.old_cycle as isize).abs() > 8 {
             self.old_cycle = cycle;
 
             if self.counter == 0 {

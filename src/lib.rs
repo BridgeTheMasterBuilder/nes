@@ -18,6 +18,7 @@ use screen::Screen;
 use speaker::Speaker;
 
 use crate::core::EmulatorCore;
+use crate::cpu::status::Flag::InterruptDisable;
 use crate::cpu::Cpu;
 use crate::util::Config;
 
@@ -448,9 +449,9 @@ impl Nes {
             nmis.pop();
 
             core.cpu.handle_nmi();
-        } else if dmc_irq {
+        } else if !core.cpu.p[InterruptDisable as usize] && dmc_irq {
             core.cpu.handle_irq();
-        } else if mmc3_irq {
+        } else if !core.cpu.p[InterruptDisable as usize] && mmc3_irq {
             core.cpu.bus.ppu().mmc3.as_mut().unwrap().irq.occurred = false;
             core.cpu.handle_irq();
         }
