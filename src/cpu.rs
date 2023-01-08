@@ -94,7 +94,6 @@ impl Cpu {
             },
             cyc: 0,
             disasm: false,
-            // disasm: true,
             nmi_acknowledged: false,
             pc: 0,
             p: Status::new(),

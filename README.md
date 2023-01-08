@@ -39,10 +39,10 @@ Games that have been partially tested:
 - Ice Climber
 - Kirby's Adventure
 - Kung Fu
-- Mega Man I, II, IV, V
+- Mega Man I, II, III, IV, V
 - Metal Gear
 - Metroid
-- Ninja Gaiden I & III
+- Ninja Gaiden I, II & III
 - Pac-Man
 - Q-bert
 - Rad Racer

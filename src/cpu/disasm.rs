@@ -122,7 +122,6 @@ impl Cpu {
 
         println!(
             "\t\tA: {:02X} X: {:02X} Y: {:02X} P: [{}{}{}{}{}{}{}{}] SP: {:02X} Stack: {:X?}",
-            // "\t\tA: {:02X} X: {:02X} Y: {:02X} P: {:02X}",
             self.regs[A as usize],
             self.regs[X as usize],
             self.regs[Y as usize],

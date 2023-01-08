@@ -235,6 +235,9 @@ impl Ppu {
                 self.bus.replace(data);
 
                 self.v.increment(self.ctrl.inc_vert);
+
+                self.watch_a12(self.v.address().bit(12));
+
                 data
             }
             _ => unreachable!(),
@@ -284,13 +287,6 @@ impl Ppu {
                 self.v = self.t.clone();
 
                 self.watch_a12(self.v.address().bit(12));
-                //
-                // if self.a12_rising.get() {
-                //     println!(
-                //         "[{}] ({}, {}) $2006 write triggered A12 toggle",
-                //         self.frame, self.scanline, self.dot
-                //     );
-                // }
 
                 self.ppuscroll_delay = (0, false);
             } else {
@@ -300,12 +296,9 @@ impl Ppu {
 
         if let Some(mmc3) = self.mmc3.as_mut() {
             if !self.a12.get() {
-                // println!("a12 low for {} cycles", 9 - self.a12_filter.get());
-
                 self.a12_filter
                     .replace(self.a12_filter.get().saturating_sub(1));
             } else {
-                // println!("resetting filter");
                 self.a12_filter.replace(9);
             }
 
@@ -313,14 +306,8 @@ impl Ppu {
 
             if a12_rising {
                 self.a12_rising.replace(false);
-                println!(
-                    "[{}] ({}, {}) about to clock IRQ",
-                    self.frame, self.scanline, self.dot
-                );
 
                 mmc3.irq.clock();
-
-                // println!("done");
             }
         }
     }
@@ -374,6 +361,7 @@ impl Ppu {
 
                 self.write(addr, data);
                 self.v.increment(self.ctrl.inc_vert);
+                self.watch_a12(self.v.address().bit(12));
             }
             _ => unreachable!(),
         }
@@ -494,7 +482,7 @@ impl Ppu {
         let v = self.v.address();
         let addr = 0x2000 | (v & 0xFFF);
 
-        // self.watch_a12(addr.bit(12));
+        self.watch_a12(addr.bit(12));
 
         self.read(addr)
     }
@@ -609,20 +597,16 @@ impl Ppu {
     }
 
     fn watch_a12(&self, a12: bool) {
+        if self.mmc3.is_none() {
+            return;
+        }
+
         self.old_a12.replace(self.a12.get());
         self.a12.replace(a12);
 
-        // print!(
-        //     "[{}] ({},{}) Watching A12 ...",
-        //     self.frame, self.scanline, self.dot
-        // );
-
         if !self.old_a12.get() && self.a12.get() && self.a12_filter.get() == 0 {
-            // print!("(a12 rising)");
             self.a12_rising.replace(true);
         }
-
-        // println!();
     }
 
     fn write_chr(&mut self, addr: u16, data: u8) {
@@ -774,8 +758,7 @@ impl Ppu {
 
         let addr = pt + tile_idx * 16 + offset;
 
-        self.old_a12.replace(self.a12.get());
-        self.a12.replace(addr.bit(12));
+        self.watch_a12(addr.bit(12));
 
         self.read(addr)
     }

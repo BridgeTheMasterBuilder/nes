@@ -149,10 +149,10 @@ impl Nes {
                 } => {
                     core.state = State::StepScanline;
                 }
-                Event::KeyDown {
-                    keycode: Some(Keycode::D),
-                    ..
-                } => core.cpu.disasm = !core.cpu.disasm,
+                // Event::KeyDown {
+                //     keycode: Some(Keycode::D),
+                //     ..
+                // } => core.cpu.disasm = !core.cpu.disasm,
                 Event::KeyDown {
                     keycode: Some(Keycode::R),
                     ..
@@ -444,13 +444,6 @@ impl Nes {
         }
 
         let nmis = &mut core.cpu.bus.ppu().interrupts;
-        //
-        // if nmi_occurred || dmc_irq || mmc3_irq {
-        //     println!(
-        //         "Interrupt disable = {}",
-        //         core.cpu.p[InterruptDisable as usize]
-        //     );
-        // }
 
         if nmi_occurred && !nmis.is_empty() {
             nmis.pop();
@@ -459,7 +452,6 @@ impl Nes {
         } else if !core.cpu.p[InterruptDisable as usize] && dmc_irq {
             core.cpu.handle_irq();
         } else if !core.cpu.p[InterruptDisable as usize] && mmc3_irq {
-            // println!("Handling IRQ");
             core.cpu.bus.ppu().mmc3.as_mut().unwrap().irq.occurred = false;
             core.cpu.handle_irq();
         }

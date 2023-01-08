@@ -104,9 +104,8 @@ impl Gui<'_> {
 
         Self {
             core,
-            // selected_menu: Menu::General,
-            selected_menu: Menu::Apu,
-            selected_apu_menu: ApuMenu::Visualizer,
+            selected_menu: Menu::General,
+            selected_apu_menu: ApuMenu::Registers,
             scratch_surface,
             oscilloscopes,
             oscilloscope_handles: [None, None, None, None, None, None],

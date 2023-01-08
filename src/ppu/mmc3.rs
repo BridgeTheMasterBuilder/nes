@@ -25,25 +25,15 @@ impl Irq {
     }
 
     pub fn clock(&mut self) {
-        // println!("counter before: {}", self.counter);
-
         self.old_counter = self.counter;
 
         if self.counter == 0 {
             self.counter = self.reload;
         } else {
-            // println!("decrementing counter");
             self.counter -= 1;
         }
-        //
-        // println!("counter after: {}", self.counter);
-        //
-        // println!("IRQ enabled = {}", self.enabled);
 
         if self.old_counter == 1 && self.enabled {
-            // if self.enabled {
-            // if self.enabled {
-            // println!("Triggering IRQ");
             self.occurred = true;
         }
     }

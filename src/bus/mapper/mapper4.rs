@@ -219,11 +219,9 @@ impl MapperTrait for Mapper4 {
                 self.ram_protected = write_protection;
             }
             0xC000..=0xDFFE if addr % 2 == 0 => {
-                // println!("Setting IRQ counter to {data}");
                 mmc3.irq.reload = data;
             }
             0xC001..=0xDFFF => {
-                // println!("Reloading IRQ counter");
                 mmc3.irq.counter = 0;
             }
             0xE000..=0xFFFE if addr % 2 == 0 => {
