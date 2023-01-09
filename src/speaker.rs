@@ -12,7 +12,7 @@ pub(super) struct Speaker {
     audio_queue: AudioQueue<f32>,
     clockrate: u32,
     counter: u32,
-    sample_bufs: [Vec<f32>; 5],
+    sample_bufs: [Vec<f32>; 6],
 }
 
 impl Speaker {
@@ -43,6 +43,7 @@ impl Speaker {
                 Vec::with_capacity(step),
                 Vec::with_capacity(step),
                 Vec::with_capacity(step),
+                Vec::with_capacity(step),
             ],
         })
     }
@@ -58,19 +59,7 @@ impl Speaker {
         Ok(())
     }
 
-    fn mix(audio_samples: [f32; 5]) -> f32 {
-        let [pulse1, pulse2, triangle, noise, dmc] = audio_samples;
-
-        let pulse_out = 95.88 / ((8128.0 / (pulse1 + pulse2)) + 100.0);
-        let tnd_out =
-            159.79 / ((1.0 / ((triangle / 8227.0) + (noise / 12241.0) + (dmc / 22638.0))) + 100.0);
-
-        let mixed = pulse_out + tnd_out;
-
-        mixed * 2.0 - 1.0
-    }
-
-    pub fn push_sample(&mut self, audio_samples: [f32; 5]) -> Result<(), Box<dyn Error>> {
+    pub fn push_sample(&mut self, audio_samples: [f32; 6]) -> Result<(), Box<dyn Error>> {
         for (channel, &sample) in audio_samples.iter().enumerate() {
             self.sample_bufs[channel].push(sample);
         }
@@ -91,8 +80,8 @@ impl Speaker {
                     self.sample_bufs[3].iter().sum::<f32>() / self.sample_bufs[3].len() as f32;
                 let dmc =
                     self.sample_bufs[4].iter().sum::<f32>() / self.sample_bufs[4].len() as f32;
-
-                let output = Self::mix([pulse1, pulse2, triangle, noise, dmc]);
+                let output =
+                    self.sample_bufs[5].iter().sum::<f32>() / self.sample_bufs[5].len() as f32;
 
                 self.output.replace([
                     (pulse1 / 15.0) * 2.0 - 1.0,

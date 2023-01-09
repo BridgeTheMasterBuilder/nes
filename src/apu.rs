@@ -69,14 +69,15 @@ impl Apu {
         }
     }
 
-    pub fn output(&self) -> [f32; 5] {
-        [
-            self.pulse1.output(),
-            self.pulse2.output(),
-            self.triangle.output(),
-            self.noise.output(),
-            self.dmc.output(),
-        ]
+    pub fn output(&self) -> [f32; 6] {
+        let pulse1 = self.pulse1.output();
+        let pulse2 = self.pulse2.output();
+        let triangle = self.triangle.output();
+        let noise = self.noise.output();
+        let dmc = self.dmc.output();
+        let mixed = Self::mix([pulse1, pulse2, triangle, noise, dmc]);
+
+        [pulse1, pulse2, triangle, noise, dmc, mixed]
     }
 
     pub fn read(&self, addr: u16) -> u8 {
@@ -216,6 +217,18 @@ impl Apu {
                 self.frame_counter = (self.frame_counter + 1) % 6;
             }
         }
+    }
+
+    fn mix(audio_samples: [f32; 5]) -> f32 {
+        let [pulse1, pulse2, triangle, noise, dmc] = audio_samples;
+
+        let pulse_out = 95.88 / ((8128.0 / (pulse1 + pulse2)) + 100.0);
+        let tnd_out =
+            159.79 / ((1.0 / ((triangle / 8227.0) + (noise / 12241.0) + (dmc / 22638.0))) + 100.0);
+
+        let mixed = pulse_out + tnd_out;
+
+        mixed * 2.0 - 1.0
     }
 
     fn update_lens(&mut self) {

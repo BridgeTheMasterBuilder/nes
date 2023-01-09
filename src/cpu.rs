@@ -62,6 +62,7 @@ pub struct Cpu {
     pub nmi_acknowledged: bool,
     pub pc: u16,
     pub p: Status,
+    pub sample_buf: Vec<[f32; 6]>,
     config: Config,
     real_cyc: usize,
     regs: [u8; 3],
@@ -97,6 +98,7 @@ impl Cpu {
             nmi_acknowledged: false,
             pc: 0,
             p: Status::new(),
+            sample_buf: Vec::new(),
             real_cyc: 0,
             regs: [0, 0, 0],
             sp: 0,
@@ -1140,6 +1142,10 @@ impl Cpu {
             self.bus.ppu().tick();
             self.bus.ppu().tick();
             self.bus.apu().tick();
+
+            let output = self.bus.apu().output();
+
+            self.sample_buf.push(output);
 
             if self.bus.apu().dmc.buffer_should_be_filled() {
                 let sample_addr = self.bus.apu().dmc.addr;

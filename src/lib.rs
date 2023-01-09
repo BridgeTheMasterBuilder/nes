@@ -46,7 +46,6 @@ pub enum State {
 }
 
 pub struct Nes {
-    actual_cycle: usize,
     dpad_in_use: bool,
     event_queue: EventPump,
     filename: String,
@@ -82,7 +81,6 @@ impl Nes {
         let filename = config.filename.clone();
 
         Ok(Self {
-            actual_cycle: 0,
             dpad_in_use: false,
             event_queue: sdl_context.event_pump()?,
             save_states: Self::load_save_states(&filename),
@@ -393,7 +391,6 @@ impl Nes {
                     self.speaker.flush()?;
 
                     core.adjust_cycles_per_frame();
-                    self.actual_cycle = 0;
                     break;
                 }
                 _ => break,
@@ -405,25 +402,28 @@ impl Nes {
         Ok(())
     }
 
-    fn execute(&mut self, core: &mut EmulatorCore, state: State) -> Result<State, Box<dyn Error>> {
-        while self.actual_cycle < core.cpu.cyc {
-            let output = core.cpu.bus.apu().output();
+    fn update_audio_buffer(&mut self, core: &mut EmulatorCore) -> Result<(), Box<dyn Error>> {
+        let sample_buf = std::mem::take(&mut core.cpu.sample_buf);
 
-            self.speaker.push_sample(output)?;
-
-            if let Some(output) = self.speaker.output.take() {
-                let diameter = OSCILLOSCOPE_DEPTH / 2;
-
-                for (channel, output) in output.iter().enumerate() {
-                    core.sample_buffers[channel]
-                        .push(diameter as f32 - output * diameter as f32 * 0.5);
-                }
-            }
-
-            self.actual_cycle += 1;
+        for sample in sample_buf {
+            self.speaker.push_sample(sample)?;
         }
 
+        if let Some(output) = self.speaker.output.take() {
+            let diameter = OSCILLOSCOPE_DEPTH / 2;
+
+            for (channel, output) in output.iter().enumerate() {
+                core.sample_buffers[channel].push(diameter as f32 - output * diameter as f32 * 0.5);
+            }
+        }
+
+        Ok(())
+    }
+
+    fn execute(&mut self, core: &mut EmulatorCore, state: State) -> Result<State, Box<dyn Error>> {
         core.cpu.fetch_decode_and_execute()?;
+
+        self.update_audio_buffer(core)?;
 
         let nmi_occurred = core.cpu.bus.ppu().nmi_occurred.get();
         let dmc_irq = core.cpu.bus.apu().interrupt.get();
