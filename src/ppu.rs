@@ -57,7 +57,6 @@ pub struct Ppu {
     bus: Cell<u8>,
     ctrl: Control,
     cur_spr: Option<Sprite>,
-    cyc: usize,
     last_nmi_pair: bool,
     mapper_type: MapperType,
     mask: Mask,
@@ -155,7 +154,6 @@ impl Ppu {
             bus: Cell::new(0),
             ctrl: Control::new(),
             cur_spr: None,
-            cyc: 0,
             last_nmi_pair: false,
             mapper_type,
             mask: Mask::new(),
@@ -253,12 +251,8 @@ impl Ppu {
         let show_spr = self.mask.show_sprites;
         let rendering = show_bg || show_spr;
 
-        // Idle
-        if self.dot == 0 {
-            if self.scanline == 0 {
-                self.cyc = 0;
-            }
-        } else {
+        // Idle on first dot
+        if self.dot != 0 {
             match self.scanline {
                 0..=239 => self.tick_visible_scanline(rendering),
                 241 if self.dot == 1 => {
@@ -273,7 +267,6 @@ impl Ppu {
                 _ => {}
             }
         }
-        self.cyc += 1;
 
         self.dot = (self.dot + 1) % 341;
 
@@ -866,11 +859,11 @@ impl Ppu {
             // PT low
             dot @ (257..=320) if dot % 8 == 5 => {
                 if let Some(Sprite {
-                                tile_idx,
-                                y,
-                                attrib,
-                                ..
-                            }) = self.cur_spr
+                    tile_idx,
+                    y,
+                    attrib,
+                    ..
+                }) = self.cur_spr
                 {
                     let spr_off = if attrib.flip_vert {
                         let spr_height = (self.ctrl.size / 8) as u16;
@@ -897,11 +890,11 @@ impl Ppu {
             // PT high
             dot @ (257..=320) if dot % 8 == 7 => {
                 if let Some(Sprite {
-                                tile_idx,
-                                y,
-                                attrib,
-                                ..
-                            }) = self.cur_spr
+                    tile_idx,
+                    y,
+                    attrib,
+                    ..
+                }) = self.cur_spr
                 {
                     let spr_height = (self.ctrl.size / 8) as u16;
 
