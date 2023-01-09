@@ -97,18 +97,20 @@ impl Dmc {
                 self.enabled = self.sample_buf.is_some();
             }
 
-            if self.enabled && let Some(sample_buf) = self.sample_buf {
-                let delta = sample_buf.bit(0);
+            if self.enabled {
+                self.sample_buf.map(|sample_buf| {
+                    let delta = sample_buf.bit(0);
 
-                if delta {
-                    if self.output <= 125 {
-                        self.output += 2;
+                    if delta {
+                        if self.output <= 125 {
+                            self.output += 2;
+                        }
+                    } else {
+                        self.output = self.output.saturating_sub(2);
                     }
-                } else {
-                    self.output = self.output.saturating_sub(2);
-                }
 
-                self.sample_buf = self.sample_buf.map(|buf| buf >> 1);
+                    self.sample_buf = self.sample_buf.map(|buf| buf >> 1);
+                });
             }
 
             self.bits_remaining -= 1;

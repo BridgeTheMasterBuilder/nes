@@ -724,8 +724,8 @@ impl Ppu {
             })
         } else if show_bg && !show_spr {
             Some(bg_pixel)
-        } else if !show_bg && show_spr && let Some((_, spr_pixel, _)) = spr_pixel {
-            Some(spr_pixel)
+        } else if !show_bg && show_spr {
+            spr_pixel.map(|(_, spr_pixel, _)| spr_pixel)
         } else {
             Some(0)
         };
@@ -867,11 +867,11 @@ impl Ppu {
             // PT low
             dot @ (257..=320) if dot % 8 == 5 => {
                 if let Some(Sprite {
-                    tile_idx,
-                    y,
-                    attrib,
-                    ..
-                }) = self.cur_spr
+                                tile_idx,
+                                y,
+                                attrib,
+                                ..
+                            }) = self.cur_spr
                 {
                     let spr_off = if attrib.flip_vert {
                         let spr_height = (self.ctrl.size / 8) as u16;
@@ -898,11 +898,11 @@ impl Ppu {
             // PT high
             dot @ (257..=320) if dot % 8 == 7 => {
                 if let Some(Sprite {
-                    tile_idx,
-                    y,
-                    attrib,
-                    ..
-                }) = self.cur_spr
+                                tile_idx,
+                                y,
+                                attrib,
+                                ..
+                            }) = self.cur_spr
                 {
                     let spr_height = (self.ctrl.size / 8) as u16;
 

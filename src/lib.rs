@@ -1,6 +1,3 @@
-#![allow(clippy::new_without_default)]
-#![feature(let_chains)]
-
 use std::error::Error;
 use std::fs::File;
 use std::io::{Read, Write};
