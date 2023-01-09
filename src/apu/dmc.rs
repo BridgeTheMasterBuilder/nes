@@ -98,7 +98,7 @@ impl Dmc {
             }
 
             if self.enabled {
-                self.sample_buf.map(|sample_buf| {
+                self.sample_buf.as_mut().map(|sample_buf| {
                     let delta = sample_buf.bit(0);
 
                     if delta {
@@ -109,7 +109,7 @@ impl Dmc {
                         self.output = self.output.saturating_sub(2);
                     }
 
-                    self.sample_buf = self.sample_buf.map(|buf| buf >> 1);
+                    *sample_buf >>= 1;
                 });
             }
 

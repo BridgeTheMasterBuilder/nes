@@ -705,13 +705,14 @@ impl Ppu {
         let show_spr = self.mask.show_sprites;
 
         let pixel = if show_bg && show_spr {
-            Some(match (bg_pixel, spr_pixel) {
-                (0, None) => bg_pixel,
+            match (bg_pixel, spr_pixel) {
                 (0, Some((_, spr_pixel, _))) => spr_pixel,
                 (bg_pixel, None) => bg_pixel,
-                (bg_pixel, Some((id, spr_pixel, priority))) if show_bg && show_spr => {
-                    if id == 0 && self.spr0_present && !self.status.get().spr_0_hit && self.sx != 255 {
-                        self.status.get_mut().spr_0_hit = true;
+                (bg_pixel, Some((id, spr_pixel, priority))) => {
+                    let spr_0_hit = &mut self.status.get_mut().spr_0_hit;
+
+                    if id == 0 && self.spr0_present && !*spr_0_hit && self.sx != 255 {
+                        *spr_0_hit = true;
                     }
 
                     if priority {
@@ -720,37 +721,35 @@ impl Ppu {
                         spr_pixel
                     }
                 }
-                _ => unreachable!("{bg_pixel} - {spr_pixel:?}"),
-            })
+            }
         } else if show_bg && !show_spr {
-            Some(bg_pixel)
+            bg_pixel
         } else if !show_bg && show_spr {
-            spr_pixel.map(|(_, spr_pixel, _)| spr_pixel)
+            spr_pixel.map_or(0, |(_, spr_pixel, _)| spr_pixel)
         } else {
-            Some(0)
+            0
         };
 
+        // Overscan
         if !(8..=231).contains(&y) {
             return;
         }
 
-        let color = pixel.map(|pixel| {
-            let palette_idx = self.pram[pixel as usize].bits_abs(0, 5);
+        let palette_idx = self.pram[pixel as usize].bits_abs(0, 5);
 
-            let emphasis_bits = u8::from(self.mask).bits(5, 7) as usize;
+        let emphasis_bits = u8::from(self.mask).bits(5, 7) as usize;
 
-            self.palette.select_palette(emphasis_bits);
+        self.palette.select_palette(emphasis_bits);
 
-            let palette_idx = if self.mask.greyscale {
-                palette_idx & 0x30
-            } else {
-                palette_idx
-            };
+        let palette_idx = if self.mask.greyscale {
+            palette_idx & 0x30
+        } else {
+            palette_idx
+        };
 
-            self.palette[palette_idx]
-        });
+        let color = self.palette[palette_idx];
 
-        self.draw_pixel(color, x, y);
+        self.draw_pixel(Some(color), x, y);
     }
 
     fn spr_fetch_pt(&self, pt: u16, nt_byte: u8, offset: u16) -> u8 {
