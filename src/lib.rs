@@ -473,7 +473,7 @@ impl Nes {
             if save_file.read_to_end(&mut data).is_ok() {
                 states = serde_json::from_slice(&data)
                     .map_err(|_| eprintln!("WARNING: Save state data invalid"))
-                    .unwrap();
+                    .unwrap_or(states);
             } else {
                 eprintln!("WARNING: Failed to load save states from disk");
             }
