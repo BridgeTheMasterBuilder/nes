@@ -4,6 +4,27 @@ use crate::SAMPLERATE;
 use sdl2::audio::{AudioQueue, AudioSpecDesired};
 use sdl2::Sdl;
 
+#[derive(Clone, Copy)]
+struct IIRFilter {
+    pub output: f32,
+    b: f32,
+}
+
+impl IIRFilter {
+    pub fn new(d: f32) -> Self {
+        Self {
+            output: 0.0,
+            b: 1.0 - d,
+        }
+    }
+
+    pub fn filter(&mut self, input: f32) -> f32 {
+        self.output += self.b * (input - self.output);
+
+        self.output
+    }
+}
+
 pub(super) struct Speaker {
     pub muted: bool,
     pub output: Option<[f32; 6]>,
@@ -12,7 +33,7 @@ pub(super) struct Speaker {
     audio_queue: AudioQueue<f32>,
     clockrate: u32,
     counter: u32,
-    sample_bufs: [f32; 6],
+    filters: [IIRFilter; 6],
 }
 
 impl Speaker {
@@ -35,7 +56,7 @@ impl Speaker {
             audio_buf: Vec::with_capacity(1024),
             clockrate,
             counter: 0,
-            sample_bufs: [0.0; 6],
+            filters: [IIRFilter::new(0.9); 6],
         })
     }
 
@@ -51,11 +72,8 @@ impl Speaker {
     }
 
     pub fn push_sample(&mut self, audio_samples: &[f32; 6]) -> Result<(), Box<dyn Error>> {
-        let d = 0.90;
-        let b = 1.0 - d;
-
-        for (output, input) in self.sample_bufs.iter_mut().zip(audio_samples.iter()) {
-            *output += b * (*input - *output);
+        for (channel_filter, &input) in self.filters.iter_mut().zip(audio_samples.iter()) {
+            channel_filter.filter(input);
         }
 
         let sample = self.counter + SAMPLERATE > self.clockrate;
@@ -64,7 +82,8 @@ impl Speaker {
             let output = if self.muted {
                 0.0
             } else {
-                let [pulse1, pulse2, triangle, noise, dmc, output] = self.sample_bufs;
+                let [pulse1, pulse2, triangle, noise, dmc, output] =
+                    self.filters.map(|filter| filter.output);
 
                 self.output.replace([
                     (pulse1 / 15.0) * 2.0 - 1.0,

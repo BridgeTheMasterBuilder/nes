@@ -989,7 +989,6 @@ impl Cpu {
 
     pub fn handle_nmi(&mut self) {
         self.tick(7 + 7);
-
         self.push_u16(self.pc);
 
         let flags = self.flags();
@@ -998,7 +997,6 @@ impl Cpu {
 
         self.push(flags);
         self.p[InterruptDisable as usize] = true;
-
         self.pc = self.bus.read_u16(0xFFFA);
     }
 
@@ -1016,7 +1014,6 @@ impl Cpu {
 
         self.push(flags);
         self.p[InterruptDisable as usize] = true;
-
         self.pc = self.bus.read_u16(0xFFFE);
     }
 
@@ -1073,7 +1070,6 @@ impl Cpu {
 
     fn read_ind(&mut self, addr: u16) -> u16 {
         let (adl, adh) = self.ea_ind(addr);
-
         let l = self.bus.read_u8(adl);
         let h = self.bus.read_u8(adh);
 
@@ -1110,7 +1106,6 @@ impl Cpu {
 
     fn read_u8(&mut self) -> u8 {
         let pc = self.pc;
-
         let byte = self.bus.read_u8(pc);
 
         self.pc = self.pc.wrapping_add(1);
@@ -1120,7 +1115,6 @@ impl Cpu {
 
     fn read_u16(&mut self) -> u16 {
         let pc = self.pc;
-
         let word = self.bus.read_u16(pc);
 
         self.pc = self.pc.wrapping_add(2);

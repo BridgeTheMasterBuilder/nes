@@ -179,108 +179,109 @@ impl eframe::App for Gui<'_> {
                         }
                         ApuMenu::Visualizer => {
                             ui.vertical(|ui| {
-                                // let samples = if ui.available_width() < 1920.0 {
-                                //     OSCILLOSCOPE_SAMPLES
-                                // } else { OSCILLOSCOPE_SAMPLES*2 };
-
-                                let Vec2 { y: h, .. } = ui.available_size();
-                                let ymargin = h / 15.0;
-                                let rect = Rect::new(
-                                    0,
-                                    0,
-                                    OSCILLOSCOPE_SAMPLES as u32,
-                                    OSCILLOSCOPE_DEPTH as u32,
-                                );
-
                                 for fb in 0..self.oscilloscopes.len() {
-                                    let mut pixels = Vec::with_capacity(
-                                        OSCILLOSCOPE_SAMPLES * OSCILLOSCOPE_DEPTH * 4,
-                                    );
+                                    let Vec2 { y: h, .. } = ui.available_size();
 
-                                    let buf = &mut core.sample_buffers[fb];
+                                    ui.horizontal(|ui| {
+                                        ui.label(LABELS[fb]);
 
-                                    let len = buf.len();
+                                        let Vec2 { x: w, .. } = ui.available_size();
+                                        let xmargin = w / 10.0;
+                                        let ymargin = h / 15.0;
 
-                                    self.scratch_surface
-                                        .with_texture_canvas(
-                                            &mut self.oscilloscopes[fb],
-                                            |canvas| {
-                                                if len >= OSCILLOSCOPE_SAMPLES {
-                                                    canvas.set_draw_color(Color::BLUE);
-                                                    canvas.clear();
+                                        let rect = Rect::new(
+                                            0,
+                                            0,
+                                            OSCILLOSCOPE_SAMPLES as u32,
+                                            OSCILLOSCOPE_DEPTH as u32,
+                                        );
 
-                                                    canvas.set_draw_color(Color::WHITE);
+                                        let mut pixels = Vec::with_capacity(
+                                            OSCILLOSCOPE_SAMPLES * OSCILLOSCOPE_DEPTH * 4,
+                                        );
 
-                                                    canvas
-                                                        .draw_line(
-                                                            Point::new(0, buf[0] as i32),
-                                                            Point::new(1, buf[1] as i32),
-                                                        )
-                                                        .unwrap();
+                                        let buf = &mut core.sample_buffers[fb];
 
-                                                    for x in 1..len - 1 {
-                                                        let x = x as i32;
+                                        let len = buf.len();
+
+                                        self.scratch_surface
+                                            .with_texture_canvas(
+                                                &mut self.oscilloscopes[fb],
+                                                |canvas| {
+                                                    if len >= OSCILLOSCOPE_SAMPLES {
+                                                        canvas.set_draw_color(Color::BLUE);
+                                                        canvas.clear();
+
+                                                        canvas.set_draw_color(Color::WHITE);
+
+                                                        canvas
+                                                            .draw_line(
+                                                                Point::new(0, buf[0] as i32),
+                                                                Point::new(1, buf[1] as i32),
+                                                            )
+                                                            .unwrap();
+
+                                                        for x in 1..len - 1 {
+                                                            let x = x as i32;
+
+                                                            canvas
+                                                                .draw_line(
+                                                                    Point::new(
+                                                                        x,
+                                                                        buf[x as usize] as i32,
+                                                                    ),
+                                                                    Point::new(
+                                                                        x + 1,
+                                                                        buf[x as usize + 1] as i32,
+                                                                    ),
+                                                                )
+                                                                .unwrap();
+                                                        }
 
                                                         canvas
                                                             .draw_line(
                                                                 Point::new(
-                                                                    x,
-                                                                    buf[x as usize] as i32,
+                                                                    (len - 2) as i32,
+                                                                    buf[len - 2] as i32,
                                                                 ),
                                                                 Point::new(
-                                                                    x + 1,
-                                                                    buf[x as usize + 1] as i32,
+                                                                    (len - 1) as i32,
+                                                                    buf[len - 1] as i32,
                                                                 ),
                                                             )
                                                             .unwrap();
+
+                                                        buf.clear();
                                                     }
 
-                                                    canvas
-                                                        .draw_line(
-                                                            Point::new(
-                                                                (len - 2) as i32,
-                                                                buf[len - 2] as i32,
-                                                            ),
-                                                            Point::new(
-                                                                (len - 1) as i32,
-                                                                buf[len - 1] as i32,
-                                                            ),
+                                                    pixels = canvas
+                                                        .read_pixels(
+                                                            rect,
+                                                            PixelFormatEnum::ABGR8888,
                                                         )
                                                         .unwrap();
+                                                },
+                                            )
+                                            .unwrap();
 
-                                                    buf.clear();
-                                                }
+                                        let handle = self.oscilloscope_handles[fb].get_or_insert(
+                                            ui.ctx().load_texture(
+                                                "",
+                                                ColorImage::from_rgba_unmultiplied(
+                                                    [OSCILLOSCOPE_SAMPLES, OSCILLOSCOPE_DEPTH],
+                                                    pixels.as_slice(),
+                                                ),
+                                                TextureOptions::NEAREST,
+                                            ),
+                                        );
 
-                                                pixels = canvas
-                                                    .read_pixels(rect, PixelFormatEnum::ABGR8888)
-                                                    .unwrap();
-                                            },
-                                        )
-                                        .unwrap();
-
-                                    let handle = self.oscilloscope_handles[fb].get_or_insert(
-                                        ui.ctx().load_texture(
-                                            "",
+                                        handle.set(
                                             ColorImage::from_rgba_unmultiplied(
                                                 [OSCILLOSCOPE_SAMPLES, OSCILLOSCOPE_DEPTH],
                                                 pixels.as_slice(),
                                             ),
                                             TextureOptions::NEAREST,
-                                        ),
-                                    );
-
-                                    handle.set(
-                                        ColorImage::from_rgba_unmultiplied(
-                                            [OSCILLOSCOPE_SAMPLES, OSCILLOSCOPE_DEPTH],
-                                            pixels.as_slice(),
-                                        ),
-                                        TextureOptions::NEAREST,
-                                    );
-
-                                    ui.horizontal(|ui| {
-                                        ui.label(LABELS[fb]);
-                                        let Vec2 { x: w, .. } = ui.available_size();
-                                        let xmargin = w / 10.0;
+                                        );
 
                                         ui.image(
                                             self.oscilloscope_handles[fb].as_ref().unwrap().id(),

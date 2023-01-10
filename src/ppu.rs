@@ -315,6 +315,7 @@ impl Ppu {
                 let nt_bits = data as u16 & 0b11;
                 let addr = self.t.address();
                 let addr = addr.bits_abs(12, 14) | addr.bits_abs(0, 9) | (nt_bits << 10);
+
                 self.t.update(addr);
 
                 let nmi_pair = self.ctrl.nmi && self.nmi_occurred.get();
@@ -332,6 +333,7 @@ impl Ppu {
             4 => self.oam.write(data),
             5 => {
                 let w = self.w.get();
+
                 if !w {
                     self.x = data & 0b111;
                 }
@@ -406,7 +408,6 @@ impl Ppu {
 
                 let attrib = self.spr_latches[idx].palette;
                 let priority = self.spr_latches[idx].priority;
-
                 let pixel = 1 << 4 | (attrib << 2) | palette_idx;
 
                 Some((idx, pixel, priority))
@@ -483,7 +484,6 @@ impl Ppu {
     fn fetch_pt_low(&self, nt_byte: u8) -> u8 {
         let pt = self.ctrl.bg_pt_addr;
         let tile_idx = nt_byte as u16;
-
         let addr = pt + tile_idx * 16 + self.v.address().bits(12, 14);
 
         self.watch_a12(addr.bit(12));
@@ -494,7 +494,6 @@ impl Ppu {
     fn fetch_pt_high(&self, nt_byte: u8) -> u8 {
         let pt = self.ctrl.bg_pt_addr;
         let tile_idx = nt_byte as u16;
-
         let addr = pt + tile_idx * 16 + self.v.address().bits(12, 14) + 8;
 
         self.watch_a12(addr.bit(12));
@@ -747,7 +746,6 @@ impl Ppu {
 
     fn spr_fetch_pt(&self, pt: u16, nt_byte: u8, offset: u16) -> u8 {
         let tile_idx = nt_byte as u16;
-
         let addr = pt + tile_idx * 16 + offset;
 
         self.watch_a12(addr.bit(12));

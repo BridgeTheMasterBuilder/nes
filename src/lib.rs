@@ -124,7 +124,7 @@ impl Nes {
                     keycode: Some(Keycode::P),
                     ..
                 } => {
-                    core.state = if let State::Running = core.state {
+                    core.state = if core.state == State::Running {
                         State::Halted
                     } else {
                         State::Running
@@ -134,16 +134,16 @@ impl Nes {
                     keycode: Some(Keycode::F),
                     ..
                 } => core.state = State::StepFrame,
-                Event::KeyDown {
-                    keycode: Some(Keycode::S),
-                    ..
-                } => core.state = State::SingleStep,
-                Event::KeyDown {
-                    keycode: Some(Keycode::A),
-                    ..
-                } => {
-                    core.state = State::StepScanline;
-                }
+                // Event::KeyDown {
+                //     keycode: Some(Keycode::S),
+                //     ..
+                // } => core.state = State::SingleStep,
+                // Event::KeyDown {
+                //     keycode: Some(Keycode::A),
+                //     ..
+                // } => {
+                //     core.state = State::StepScanline;
+                // }
                 // Event::KeyDown {
                 //     keycode: Some(Keycode::D),
                 //     ..
@@ -176,12 +176,12 @@ impl Nes {
                         }
                         Button::DPadLeft => {
                             self.dpad_in_use = true;
-                            controller.release(Left);
+                            controller.release(Right);
                             controller.press(Left);
                         }
                         Button::DPadRight => {
                             self.dpad_in_use = true;
-                            controller.release(Right);
+                            controller.release(Left);
                             controller.press(Right);
                         }
                         _ => {}
@@ -432,7 +432,6 @@ impl Nes {
         } else {
             false
         };
-
         let dma = core.cpu.bus.bus().dma_interrupt;
 
         if let Some(page) = dma {

@@ -14,7 +14,6 @@ pub struct EmulatorCore {
     pub request_termination: bool,
     pub running: bool,
     pub state: State,
-    _clockrate: u32,
     avg_fps: f64,
     fps: f64,
     // For calculating the number of cycles to run this frame
@@ -37,7 +36,6 @@ impl EmulatorCore {
             request_termination: false,
             running: true,
             state: State::Running,
-            _clockrate: clockrate,
             avg_fps: 60.0,
             fps: 60.0,
             adjust: 0,
@@ -73,7 +71,6 @@ impl EmulatorCore {
 
         self.adjust -= rem;
 
-        // TODO use clockrate to calculate number of cycles to run
         self.cycles_per_frame = ((341 * 262) / 3 + self.adjust as i32) as usize;
     }
 
@@ -81,10 +78,6 @@ impl EmulatorCore {
         self.fps = Duration::from_secs(1).as_nanos() as f64 / dt.as_nanos() as f64;
 
         self.avg_fps = (self.avg_fps + self.fps) / 2.0;
-
-        // if frame % (60 * 60) == 0 {
-        //     clockrate = ((CLOCKRATE as f64) / (avg_fps / 60.0)) as i32;
-        // }
     }
 }
 

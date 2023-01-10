@@ -12,6 +12,7 @@ use nes::gui::Gui;
 use nes::util::Config;
 use nes::Nes;
 
+// Run the clock a little bit
 const CLOCKRATE: u32 = (1789773.0 / (60.1 / 60.0)) as u32;
 
 /// Emulator for the Nintendo Entertainment System
@@ -46,7 +47,6 @@ fn main() -> Result<(), Box<dyn Error>> {
                 loop {
                     if core.request_termination {
                         nes.save_save_states();
-
                         break;
                     }
 
