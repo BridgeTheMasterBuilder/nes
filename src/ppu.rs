@@ -969,33 +969,37 @@ impl Ppu {
     }
 
     fn tick_prerender_scanline(&mut self, rendering: bool) {
-        if self.dot == 1 {
-            self.nmi_occurred.replace(false);
+        match self.dot {
+            1 => {
+                self.nmi_occurred.replace(false);
 
-            let status = self.status.get_mut();
+                let status = self.status.get_mut();
 
-            status.vblank = false;
-            status.spr_0_hit = false;
-            status.spr_overflow = false;
-        }
-        // Vert(v) = vert(t)
-        else if rendering && (280..=304).contains(&self.dot) {
-            let addr = self.t.address();
-
-            let vert_bits = addr.bits_abs(11, 14) | addr.bits_abs(5, 9);
-
-            let addr = self.v.address();
-
-            let addr = addr.bits_abs(10, 10) | addr.bits_abs(0, 4) | vert_bits;
-
-            self.v.update(addr);
-        } else if self.dot == 339 {
-            if rendering && self.odd {
-                self.dot = 340;
+                status.vblank = false;
+                status.spr_0_hit = false;
+                status.spr_overflow = false;
             }
-            self.odd = !self.odd;
+            // Vert(v) = vert(t)
+            280..=304 if rendering => {
+                let addr = self.t.address();
 
-            self.frame = self.frame.wrapping_add(1);
+                let vert_bits = addr.bits_abs(11, 14) | addr.bits_abs(5, 9);
+
+                let addr = self.v.address();
+
+                let addr = addr.bits_abs(10, 10) | addr.bits_abs(0, 4) | vert_bits;
+
+                self.v.update(addr);
+            }
+            339 => {
+                if rendering && self.odd {
+                    self.dot = 340;
+                }
+                self.odd = !self.odd;
+
+                self.frame = self.frame.wrapping_add(1);
+            }
+            _ => {}
         }
 
         self.tick_visible_scanline(rendering);
