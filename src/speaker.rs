@@ -12,17 +12,15 @@ pub(super) struct Speaker {
     audio_queue: AudioQueue<f32>,
     clockrate: u32,
     counter: u32,
-    sample_bufs: [Vec<f32>; 6],
+    sample_bufs: [f32; 6],
 }
 
 impl Speaker {
     pub fn new(sdl_context: &Sdl, clockrate: u32) -> Result<Self, Box<dyn Error>> {
-        let step = ((clockrate / SAMPLERATE) as f64) as usize;
-
         Ok(Self {
             muted: false,
             output: None,
-            volume: 0.5,
+            volume: 1.0,
             audio_queue: {
                 let audio_subsystem = sdl_context.audio()?;
 
@@ -37,14 +35,7 @@ impl Speaker {
             audio_buf: Vec::with_capacity(1024),
             clockrate,
             counter: 0,
-            sample_bufs: [
-                Vec::with_capacity(step),
-                Vec::with_capacity(step),
-                Vec::with_capacity(step),
-                Vec::with_capacity(step),
-                Vec::with_capacity(step),
-                Vec::with_capacity(step),
-            ],
+            sample_bufs: [0.0; 6],
         })
     }
 
@@ -59,9 +50,12 @@ impl Speaker {
         Ok(())
     }
 
-    pub fn push_sample(&mut self, audio_samples: [f32; 6]) -> Result<(), Box<dyn Error>> {
-        for (channel, &sample) in audio_samples.iter().enumerate() {
-            self.sample_bufs[channel].push(sample);
+    pub fn push_sample(&mut self, audio_samples: &[f32; 6]) -> Result<(), Box<dyn Error>> {
+        let d = 0.90;
+        let b = 1.0 - d;
+
+        for (output, input) in self.sample_bufs.iter_mut().zip(audio_samples.iter()) {
+            *output += b * (*input - *output);
         }
 
         let sample = self.counter + SAMPLERATE > self.clockrate;
@@ -70,18 +64,7 @@ impl Speaker {
             let output = if self.muted {
                 0.0
             } else {
-                let pulse1 =
-                    self.sample_bufs[0].iter().sum::<f32>() / self.sample_bufs[0].len() as f32;
-                let pulse2 =
-                    self.sample_bufs[1].iter().sum::<f32>() / self.sample_bufs[1].len() as f32;
-                let triangle =
-                    self.sample_bufs[2].iter().sum::<f32>() / self.sample_bufs[2].len() as f32;
-                let noise =
-                    self.sample_bufs[3].iter().sum::<f32>() / self.sample_bufs[3].len() as f32;
-                let dmc =
-                    self.sample_bufs[4].iter().sum::<f32>() / self.sample_bufs[4].len() as f32;
-                let output =
-                    self.sample_bufs[5].iter().sum::<f32>() / self.sample_bufs[5].len() as f32;
+                let [pulse1, pulse2, triangle, noise, dmc, output] = self.sample_bufs;
 
                 self.output.replace([
                     (pulse1 / 15.0) * 2.0 - 1.0,
@@ -89,17 +72,13 @@ impl Speaker {
                     (triangle / 15.0) * 2.0 - 1.0,
                     (noise / 15.0) * 2.0 - 1.0,
                     (dmc / 128.0) * 2.0 - 1.0,
-                    output,
+                    output * 2.0 - 1.0,
                 ]);
 
                 output * (self.volume / 1.0)
             };
 
             self.audio_buf.push(output);
-
-            for buf in &mut self.sample_bufs {
-                buf.clear();
-            }
         }
 
         self.counter = (self.counter + SAMPLERATE) % self.clockrate;

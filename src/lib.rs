@@ -405,8 +405,8 @@ impl Nes {
     fn update_audio_buffer(&mut self, core: &mut EmulatorCore) -> Result<(), Box<dyn Error>> {
         let sample_buf = std::mem::take(&mut core.cpu.sample_buf);
 
-        for sample in sample_buf {
-            self.speaker.push_sample(sample)?;
+        for samples in sample_buf {
+            self.speaker.push_sample(&samples)?;
         }
 
         if let Some(output) = self.speaker.output.take() {

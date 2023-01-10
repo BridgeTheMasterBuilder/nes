@@ -228,7 +228,7 @@ impl Apu {
 
         let mixed = pulse_out + tnd_out;
 
-        mixed * 2.0 - 1.0
+        mixed
     }
 
     fn update_lens(&mut self) {
