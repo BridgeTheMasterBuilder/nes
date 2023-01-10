@@ -1,6 +1,6 @@
 [package]
 name = "nes"
-version = "1.0.0"
+version = "1.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -16,7 +16,5 @@ egui = "0.20.1"
 eframe = { version = "0.20.1", default-features = false, features = ["default_fonts", "glow"]}
 byte-slice-cast = "1.2.2"
 
-[features]
-
 [profile.dev]
-opt-level = 2
+opt-level = 1
