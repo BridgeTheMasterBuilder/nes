@@ -988,6 +988,7 @@ impl Cpu {
     }
 
     pub fn handle_nmi(&mut self) {
+        // Delay NMI handling slightly to make the emulator a little bit more forgiving, mostly for Battletoads
         self.tick(7 + 7);
         self.push_u16(self.pc);
 
