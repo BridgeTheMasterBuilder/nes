@@ -12,7 +12,6 @@ use nes::gui::Gui;
 use nes::util::Config;
 use nes::Nes;
 
-// I don't know why but running the clock a little bit slower seems to result in good overall audio sync
 const CLOCKRATE: u32 = (1789773.0 / (60.1 / 60.0)) as u32;
 
 /// Emulator for the Nintendo Entertainment System
