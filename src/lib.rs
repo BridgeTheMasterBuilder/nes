@@ -464,7 +464,7 @@ impl Nes {
 
         name.set_extension("stat");
 
-        let mut states = vec![None; 8];
+        let mut states = vec![None; 9];
 
         if let Ok(mut save_file) = File::open(name) {
             let mut data = Vec::new();

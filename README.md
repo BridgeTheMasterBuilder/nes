@@ -38,7 +38,7 @@ R = Reset NES
 F5 = Save save state to selected slot
 F7 = Load save state from selected slot
 
-Up to 8 save states are supported, which are saved to a file with the same name as the rom but with extension `.stat.`. For cartridges that have battery-backed RAM, the data will be saved to a file with extension `.sav`.
+Up to 9 save states are supported, which are saved to a file with the same name as the rom but with extension `.stat.`. For cartridges that have battery-backed RAM, the data will be saved to a file with extension `.sav`.
 
 NOTE: The emulator requires a controller to play.
 
