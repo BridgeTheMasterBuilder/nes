@@ -6,8 +6,8 @@ use std::thread::sleep;
 use std::time::Duration;
 
 use argh::FromArgs;
-use nes::core::EmulatorCore;
 
+use nes::core::EmulatorCore;
 use nes::gui::Gui;
 use nes::util::Config;
 use nes::Nes;
@@ -32,35 +32,28 @@ fn main() -> Result<(), Box<dyn Error>> {
     if !args.debug {
         let mut core = EmulatorCore::new(&config, CLOCKRATE)?;
 
-        let core_thread = thread::Builder::new()
-            .stack_size(16 * 1024 * 1024)
-            .spawn(move || {
-                let mut nes = Nes::new(CLOCKRATE, &config).unwrap_or_else(|error| {
-                    eprintln!("Error: {error}");
+        let mut nes = Nes::new(CLOCKRATE, &config).unwrap_or_else(|error| {
+            eprintln!("Error: {error}");
 
-                    process::exit(1);
-                });
+            process::exit(1);
+        });
 
-                core.cpu.reset();
+        core.cpu.reset();
 
-                loop {
-                    if core.request_termination {
-                        nes.save_save_states();
-                        break;
-                    }
+        loop {
+            if core.request_termination {
+                nes.save_save_states();
+                break;
+            }
 
-                    nes.run(&mut core).unwrap();
-                }
-            })
-            .unwrap();
-
-        core_thread.join().unwrap();
+            nes.run(&mut core).unwrap();
+        }
     } else {
         let core = Arc::new(Mutex::new(EmulatorCore::new(&config, CLOCKRATE)?));
         let gui = Gui::new(core.clone());
 
         thread::Builder::new()
-            .stack_size(16 * 1024 * 1024)
+            // .stack_size(16 * 1024 * 1024)
             .spawn(move || {
                 let mut nes = Nes::new(CLOCKRATE, &config).unwrap_or_else(|error| {
                     eprintln!("Error: {error}");

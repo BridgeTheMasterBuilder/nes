@@ -1,14 +1,16 @@
+use std::error::Error;
+use std::time::Duration;
+
+use egui::Ui;
+
 use crate::cartridge::{Cartridge, MapperType};
 use crate::cpu::Cpu;
 use crate::gui::DebugInfo;
 use crate::util::Config;
 use crate::{State, OSCILLOSCOPE_DEPTH, OSCILLOSCOPE_SAMPLES};
-use egui::Ui;
-use std::error::Error;
-use std::time::Duration;
 
 pub struct EmulatorCore {
-    pub cpu: Cpu,
+    pub cpu: Box<Cpu>,
     pub cycles_per_frame: usize,
     pub mapper_type: MapperType,
     pub request_termination: bool,
@@ -30,7 +32,7 @@ impl EmulatorCore {
         let mapper_type = cartridge.mapper_type;
 
         Ok(Self {
-            cpu: Cpu::new(config, cartridge, clockrate, false),
+            cpu: Box::new(Cpu::new(config, cartridge, clockrate, false)),
             cycles_per_frame: (341 * 262) / 3,
             mapper_type,
             request_termination: false,

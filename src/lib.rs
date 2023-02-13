@@ -50,7 +50,7 @@ pub struct Nes {
     event_queue: EventPump,
     filename: String,
     save_state_slot: usize,
-    save_states: Vec<Option<Cpu>>,
+    save_states: Vec<Option<Box<Cpu>>>,
     screen: Screen,
     speaker: Speaker,
     _controller: Option<GameController>,
@@ -459,7 +459,7 @@ impl Nes {
         })
     }
 
-    fn load_save_states(filename: &str) -> Vec<Option<Cpu>> {
+    fn load_save_states(filename: &str) -> Vec<Option<Box<Cpu>>> {
         let mut name = Path::new(filename).to_path_buf();
 
         name.set_extension("stat");
