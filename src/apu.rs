@@ -222,9 +222,16 @@ impl Apu {
     fn mix(audio_samples: [f32; 5]) -> f32 {
         let [pulse1, pulse2, triangle, noise, dmc] = audio_samples;
 
-        let pulse_out = 95.88 / ((8128.0 / (pulse1 + pulse2)) + 100.0);
-        let tnd_out =
-            159.79 / ((1.0 / ((triangle / 8227.0) + (noise / 12241.0) + (dmc / 22638.0))) + 100.0);
+        let pulse_out = if pulse1 == 0.0 && pulse2 == 0.0 {
+            0.0
+        } else {
+            95.88 / ((8128.0 / (pulse1 + pulse2)) + 100.0)
+        };
+        let tnd_out = if triangle == 0.0 && noise == 0.0 && dmc == 0.0 {
+            0.0
+        } else {
+            159.79 / ((1.0 / ((triangle / 8227.0) + (noise / 12241.0) + (dmc / 22638.0))) + 100.0)
+        };
 
         let mixed = pulse_out + tnd_out;
 
