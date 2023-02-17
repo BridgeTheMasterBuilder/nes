@@ -53,7 +53,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         let gui = Gui::new(core.clone());
 
         thread::Builder::new()
-            // .stack_size(16 * 1024 * 1024)
+            .stack_size(8 * 1024 * 1024)
             .spawn(move || {
                 let mut nes = Nes::new(CLOCKRATE, &config).unwrap_or_else(|error| {
                     eprintln!("Error: {error}");
