@@ -26,13 +26,13 @@ pub struct EmulatorCore {
 }
 
 impl EmulatorCore {
-    pub fn new(config: &Config, clockrate: u32) -> Result<Self, Box<dyn Error>> {
+    pub fn new(config: &Config, clockrate: u32, test: bool) -> Result<Self, Box<dyn Error>> {
         let cartridge = Cartridge::new(&config.filename)?;
 
         let mapper_type = cartridge.mapper_type;
 
         Ok(Self {
-            cpu: Box::new(Cpu::new(config, cartridge, clockrate, false)),
+            cpu: Box::new(Cpu::new(config, cartridge, clockrate, test)),
             cycles_per_frame: (341 * 262) / 3,
             mapper_type,
             request_termination: false,

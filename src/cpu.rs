@@ -1,7 +1,10 @@
+use std::collections::HashMap;
 use std::error::Error;
+use std::fs;
 
 use serde::{Deserialize, Serialize};
 
+use status::Flag::*;
 use status::*;
 use Register::*;
 
@@ -9,11 +12,9 @@ use crate::bus::mapper::{
     Mapper, Mapper0, Mapper1, Mapper2, Mapper3, Mapper4, Mapper7, MapperTrait, MockBus,
 };
 use crate::cartridge::{Cartridge, MapperType};
+use crate::util::bit::Bit;
 use crate::util::crosses_page;
 use crate::Config;
-
-use crate::util::bit::Bit;
-use status::Flag::*;
 
 mod arithmetic;
 mod bitwise;
@@ -1152,5 +1153,148 @@ impl Cpu {
 
         self.cyc += cycles;
         self.real_cyc += cycles;
+    }
+
+    pub fn test(&mut self) -> Result<(), Box<dyn Error>> {
+        #[derive(Deserialize)]
+        struct State {
+            pub pc: u16,
+            pub s: u8,
+            pub a: u8,
+            pub x: u8,
+            pub y: u8,
+            pub p: u8,
+            pub ram: Vec<(u16, u8)>,
+        }
+
+        #[derive(Deserialize)]
+        struct Test {
+            pub name: String,
+            pub initial: State,
+            #[serde(rename = "final")]
+            pub final_state: State,
+            pub cycles: Vec<(u16, u8, String)>,
+        }
+
+        let mut errors = 0;
+        let mut opcode_map = HashMap::new();
+
+        for opcode in fs::read_dir("tests")? {
+            let tests = fs::read(opcode.unwrap().path())?;
+
+            let tests: Vec<Test> = serde_json::from_slice(tests.as_slice())?;
+
+            for test in tests {
+                let cycle = self.cyc;
+
+                self.pc = test.initial.pc;
+                self.sp = test.initial.s;
+                self.regs[A as usize] = test.initial.a;
+                self.regs[X as usize] = test.initial.x;
+                self.regs[Y as usize] = test.initial.y;
+                self.p = Status::from(test.initial.p);
+
+                for (addr, data) in test.initial.ram {
+                    self.bus.write_u8(addr, data);
+                }
+
+                if let Err(_) = self.fetch_decode_and_execute() {
+                    continue;
+                }
+
+                let pc = self.pc;
+                let sp = self.sp;
+                let a = self.regs[A as usize];
+                let x = self.regs[X as usize];
+                let y = self.regs[Y as usize];
+                let p = self.p;
+
+                std::panic::catch_unwind(|| {
+                    assert_eq!(
+                        pc,
+                        test.final_state.pc,
+                        "{}",
+                        format!("Instruction: {}\nPC differs", test.name)
+                    );
+                    assert_eq!(
+                        sp,
+                        test.final_state.s,
+                        "{}",
+                        format!("Instruction: {}\nSP differs", test.name)
+                    );
+                    assert_eq!(
+                        a,
+                        test.final_state.a,
+                        "{}",
+                        format!("Instruction: {}\nA differs", test.name)
+                    );
+                    assert_eq!(
+                        x,
+                        test.final_state.x,
+                        "{}",
+                        format!("Instruction: {}\nX differs", test.name)
+                    );
+                    assert_eq!(
+                        y,
+                        test.final_state.y,
+                        "{}",
+                        format!("Instruction: {}\nY differs", test.name)
+                    );
+                    assert_eq!(
+                        p,
+                        Status::from(test.final_state.p),
+                        "{}",
+                        format!("Instruction: {}\nP differs", test.name)
+                    );
+                })
+                .map_err(|_| {
+                    errors += 1;
+
+                    let opcode = test.name[..2].to_string();
+                    let freq = opcode_map.get(&opcode);
+                    let freq = freq.map(|freq| freq + 1);
+                    opcode_map.insert(opcode, freq.unwrap_or(1));
+                });
+
+                for (addr, data) in test.final_state.ram {
+                    let actual_data = self.bus.read_u8(addr);
+
+                    std::panic::catch_unwind(|| {
+                        assert_eq!(
+                            actual_data,
+                            data,
+                            "{}",
+                            format!(
+                                "Instruction: {}\nMemory value at {} (${:04X}) differs: ${3:02X} ({3:08b}) != ${4:02X} ({4:08b})",
+                                test.name, addr, addr, actual_data, data,
+                            )
+                        );
+
+                        //TODO cycles
+                        assert_eq!(test.cycles.len(), self.cyc - cycle,
+                                   "{}",
+                                   format!(
+                                       "Instruction: {}\nCycle count incorrect",
+                                       test.name,
+                                   ));
+                    }).map_err(|_| {
+                        errors += 1;
+
+                        let opcode = test.name[..2].to_string();
+                        let freq = opcode_map.get(&opcode);
+                        let freq = freq.map(|freq| freq + 1);
+                        opcode_map.insert(opcode, freq.unwrap_or(1));
+                    });
+                }
+            }
+        }
+
+        println!("All tests done: {errors} errors in total.");
+
+        for (opcode, freq) in opcode_map {
+            println!("{opcode}: {freq} errors.")
+        }
+
+        Ok(())
     }
 }

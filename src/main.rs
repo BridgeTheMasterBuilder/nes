@@ -23,14 +23,25 @@ struct Args {
     /// open debugger
     #[argh(switch, short = 'd')]
     debug: bool,
+    /// run CPU tests
+    #[argh(switch, short = 't')]
+    test: bool,
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
     let args: Args = argh::from_env();
     let config = Config::new(&args.filename);
 
+    if args.test {
+        let mut core = EmulatorCore::new(&config, CLOCKRATE, true)?;
+
+        core.cpu.test()?;
+
+        return Ok(());
+    }
+
     if !args.debug {
-        let mut core = EmulatorCore::new(&config, CLOCKRATE)?;
+        let mut core = EmulatorCore::new(&config, CLOCKRATE, false)?;
 
         let mut nes = Nes::new(CLOCKRATE, &config).unwrap_or_else(|error| {
             eprintln!("Error: {error}");
@@ -49,7 +60,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             nes.run(&mut core).unwrap();
         }
     } else {
-        let core = Arc::new(Mutex::new(EmulatorCore::new(&config, CLOCKRATE)?));
+        let core = Arc::new(Mutex::new(EmulatorCore::new(&config, CLOCKRATE, false)?));
         let gui = Gui::new(core.clone());
 
         thread::Builder::new()
