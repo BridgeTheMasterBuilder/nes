@@ -12,7 +12,7 @@ use nes::gui::Gui;
 use nes::util::Config;
 use nes::Nes;
 
-const CLOCKRATE: u32 = (1789773.0 / (60.1 / 60.0)) as u32;
+const CLOCKRATE: u32 = (1789773.0 / (60.0 / 60.0)) as u32;
 
 /// Emulator for the Nintendo Entertainment System
 #[derive(FromArgs)]
